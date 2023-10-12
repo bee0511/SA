@@ -1,5 +1,4 @@
 #!/bin/sh
-# shellcheck disable=SC3003
 
 help="\
 hw2.sh -i INPUT -o OUTPUT [-c csv|tsv] [-j]
@@ -11,7 +10,7 @@ Available Options:
 -c csv|tsv: Output files.[ct]sv
 -j: Output info.json"
 
-while getopts i:o:c:j op 2>/dev/null; do
+while getopts "i:o:c:j" op; do
   case $op in
     i)
       input=$OPTARG
@@ -20,12 +19,10 @@ while getopts i:o:c:j op 2>/dev/null; do
       output=$OPTARG
       ;;
     c)
-      XSV=$OPTARG
-      if [ "$XSV" = "tsv" ]; then XSVSPL=$'\t'; fi
-      if [ "$XSV" = "csv" ]; then XSVSPL=','; fi
+      xsv_flg=$OPTARG
       ;;
     j)
-      infojson=1
+      j_flg=1
       ;;
     *)
       >&2 echo "$help"
@@ -33,7 +30,7 @@ while getopts i:o:c:j op 2>/dev/null; do
   esac
 done
 
-if [ ! "${input}" ] || [ "${input}" != "${input%\.hw2}.hw2" ] && false; then
+if [ ! "${input}" ] || [ "${input}" != "${input%.hw2}.hw2" ]; then
   >&2 echo "Input file must end with .hw2 ($input)"
   >&2 echo "$help"
   exit 255
@@ -41,44 +38,39 @@ fi
 
 mkdir -p "${output}"
 if [ ! "${output}" ] || [ ! -d "${output}" ]; then
-  >&2 echo "Output not directory ($output)"
+  >&2 echo "Output is not a directory ($output)"
   >&2 echo "$help"
   exit 255
 fi
 
-if [ "$infojson" ]; then
-  name=$(yq r "${input}" name)
-  author=$(yq r "${input}" author)
-  date=$(yq r "${input}" date)
-
-
-  date=$(date -r "$date" -Iseconds)
-  yq r -j "{\"name\":\"$name\",\"author\":\"$author\",\"date\":\"$date\"}"  > "$output/info.json"
+if [ "$j_flg" ]; then
+    name=$(yq eval '.name' "${input}")
+    author=$(yq eval '.author' "${input}")
+    date=$(yq eval '.date' "${input}")
+    formatted_date=$(date -d "@$date" "+%Y-%m-%d %H:%M:%S")
+    json="{\"name\": \"$name\", \"author\": \"$author\", \"date\": \"$formatted_date\"}"
+    echo "$json" > "${output}/info.json"
 fi
 
-if [ "$XSVSPL" ]; then
-  echo "filename${XSVSPL}size${XSVSPL}md5${XSVSPL}sha1" > "$output/files.$XSV"
+if [ "$XSV" ]; then
+    if [ "$XSV" = "tsv" ]; then XSVSPL='\t'; fi
+    if [ "$XSV" = "csv" ]; then XSVSPL=','; fi
+    echo "filename${XSVSPL}size${XSVSPL}md5${XSVSPL}sha1" > "$output/files.$XSV"
 fi
 
-#error_files=$(
-#  jq -r '.files[] | [.name, .type, .data, .hash.md5, .hash["sha-1"]] | @tsv' "${input}" |
-#    while IFS=$'\t' read -r fn _ data md5 sha1; do
-#      f="$output/$fn"
-#      mkdir -p "$(dirname "$f")"
-#      size=$(echo "$data" | base64 -d | tee "$f" | wc -c | tr -d ' ')
-#
-#      if [ "$XSVSPL" ]; then
-#        echo "$fn${XSVSPL}$size${XSVSPL}$md5${XSVSPL}$sha1" >> "$output/files.$XSV"
-#      fi
-#
-#      if [ "$md5" != "$(md5sum -q "$f")" ] || [ "$sha1" != "$(sha1sum -q "$f")" ]; then
-#        # rm "$f"
-#        error_files=$((error_files+1))
-#        echo "$f"
-#      fi
-#    done |
-#  wc -l
-#)
+file_count=$(yq eval '.files | length' "$input")
 
-# shellcheck disable=SC2086
-#exit $error_file
+for i in $(seq 0 $((file_count - 1))); do
+    name=$(yq eval ".files[$i].name" "$input")
+    type=$(yq eval ".files[$i].type" "$input")
+    data=$(yq eval ".files[$i].data" "$input")
+    md5=$(yq eval ".files[$i].hash.md5" "$input")
+    sha_1=$(yq eval ".files[$i].hash.sha-1" "$input")
+
+    echo "File $i:"
+    echo "Name: $name"
+    echo "Type: $type"
+    echo "Data: $data"
+    echo "MD5: $md5"
+    echo "SHA-1: $sha_1"
+done
