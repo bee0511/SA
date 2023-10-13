@@ -47,9 +47,10 @@ if [ "$j_flg" ]; then
     name=$(yq '.name' "${input}")
     author=$(yq '.author' "${input}")
     date=$(yq '.date' "${input}")
-    formatted_date=$(date -d "@$date" "+%Y-%m-%d %H:%M:%S")
+    formatted_date=$(awk -v ts="$date" 'BEGIN { print strftime("%Y-%m-%d %H:%M:%S", ts) }')
     json="{\"name\": \"$name\", \"author\": \"$author\", \"date\": \"$formatted_date\"}"
     echo "$json" > "${output}/info.json"
+    echo $formatted_date
 fi
 
 if [ "$xsv_flg" ]; then
@@ -80,7 +81,7 @@ for i in $(seq 0 $((file_count - 1))); do
     test -f "$file_dir" && rm "$file_dir" # Remove file if it already exists
 
     mkdir -p "$(dirname "$file_dir")"
-    
+
     decoded_data=$(echo "$data" | base64 -d)
     echo "$decoded_data" >> "$file_dir"
 
