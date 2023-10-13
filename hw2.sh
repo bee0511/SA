@@ -49,8 +49,8 @@ fi
 if [ "$j_flg" ]; then
     name=$(yq '.name' "${input}" | sed 's/"//g')
     author=$(yq '.author' "${input}" | sed 's/"//g')
-    date=$(yq eval '.date' "$input")
-    formatted_date=$(awk -v ts="$date" 'BEGIN { cmd="date -d @"ts" --rfc-3339=seconds"; cmd | getline rfc_date; close(cmd); sub(" ", "T", rfc_date); print rfc_date }')
+    date=$(yq '.date' "$input" | sed 's/"//g')
+    formatted_date=$(date -d "@$date" "+%Y-%m-%dT%H:%M:%S%:z")
     # json="{\n\t\"name\": \"$name\",\n\t\"author\": \"$author\",\n\t\"date\": \"$formatted_date\"\n}"
     printf "{\n\t\"name\": \"%s\",\n\t\"author\": \"%s\",\n\t\"date\": \"%s\"\n}" "$name" "$author" "$formatted_date" > "${output}/info.json"
     cat "${output}"/info.json
