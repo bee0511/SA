@@ -44,9 +44,9 @@ if [ ! "${output}" ] || [ ! -d "${output}" ]; then
 fi
 
 if [ "$j_flg" ]; then
-    name=$(yq eval '.name' "${input}")
-    author=$(yq eval '.author' "${input}")
-    date=$(yq eval '.date' "${input}")
+    name=$(yq '.name' "${input}")
+    author=$(yq '.author' "${input}")
+    date=$(yq '.date' "${input}")
     formatted_date=$(date -d "@$date" "+%Y-%m-%d %H:%M:%S")
     json="{\"name\": \"$name\", \"author\": \"$author\", \"date\": \"$formatted_date\"}"
     echo "$json" > "${output}/info.json"
@@ -58,19 +58,16 @@ if [ "$xsv_flg" ]; then
     echo "filename${XSVSPL}size${XSVSPL}md5${XSVSPL}sha1" > "$output/files.$xsv_flg"
 fi
 
-file_count=$(yq eval '.files | length' "$input")
-echo count: $file_count
-echo input: $input
-echo output: $output
+file_count=$(yq '.files | length' "$input")
 ERROR_FILES=0
 
 for i in $(seq 0 $((file_count - 1))); do
 
-    name=$(yq eval ".files[$i].name" "$input")
-    type=$(yq eval ".files[$i].type" "$input")
-    data=$(yq eval ".files[$i].data" "$input")
-    md5=$(yq eval ".files[$i].hash.md5" "$input")
-    sha_1=$(yq eval ".files[$i].hash.sha-1" "$input")
+    name=$(yq ".files[$i].name" "$input")
+    type=$(yq ".files[$i].type" "$input")
+    data=$(yq ".files[$i].data" "$input")
+    md5=$(yq ".files[$i].hash.md5" "$input")
+    sha_1=$(yq ".files[$i].hash.sha-1" "$input")
 
     echo "Name: $name"
     echo "Type: $type"
