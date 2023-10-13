@@ -67,19 +67,20 @@ for i in $(seq 0 $((file_count - 1))); do
     type=$(yq ".files[$i].type" "$input" |  sed 's/"//g')
     data=$(yq ".files[$i].data" "$input" |  sed 's/"//g')
     md5=$(yq ".files[$i].hash.md5" "$input" |  sed 's/"//g')
-    sha_1=$(yq ".files[$i].hash.sha-1" "$input" |  sed 's/"//g')
+    sha_1=$(yq ".files[$i].hash.\"sha-1\"" "$input" |  sed 's/"//g')
 
+    echo -------
     echo "Name: $name"
     echo "Type: $type"
     echo "Data: $data"
     echo "MD5: $md5"
     echo "SHA-1: $sha_1"
-
+    echo -------
     file_dir="$output/$name"
     test -f "$file_dir" && rm "$file_dir" # Remove file if it already exists
 
     mkdir -p "$(dirname "$file_dir")"
-
+    
     decoded_data=$(echo "$data" | base64 -d)
     echo "$decoded_data" >> "$file_dir"
 
