@@ -52,7 +52,7 @@ if [ "$j_flg" ]; then
     date=$(yq '.date' "${input}")
     formatted_date=$(awk -v ts="$date" 'BEGIN { print strftime("%Y-%m-%d %H:%M:%S", ts) }')
     json="{\n\t\"name\": \"$name\",\n\t\"author\": \"$author\",\n\t\"date\": \"$formatted_date\"\n}"
-    printf "$json" > "${output}/info.json"
+    printf %s "$json" > "${output}/info.json"
     echo json: "$json"
 fi
 
