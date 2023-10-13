@@ -61,6 +61,7 @@ fi
 file_count=$(yq eval '.files | length' "$input")
 echo count: $file_count
 echo input: $input
+echo output: $output
 ERROR_FILES=0
 
 for i in $(seq 0 $((file_count - 1))); do
