@@ -53,10 +53,11 @@ if [ "$j_flg" ]; then
     # formatted_date=$(awk -v ts="$date" 'BEGIN { print strftime("%Y-%m-%d %H:%M:%S", ts) }')
     json="{\"name\": \"$name\", \"author\": \"$author\", \"date\": \"$date\"}"
     echo "$json" > "${output}/info.json"
+    echo json: "$json"
 fi
 
 if [ "$xsv_flg" = "tsv" ]; then 
-  echo -e "filename\tsize\tmd5\tsha1" > "$output/files.$xsv_flg"
+  printf "filename\tsize\tmd5\tsha1\n" > "$output/files.$xsv_flg"
 fi
 
 if [ "$xsv_flg" = "csv" ]; then 
@@ -93,7 +94,7 @@ for i in $(seq 0 $((file_count - 1))); do
 
 
     if [ "$xsv_flg" = "tsv" ]; then 
-    echo -e "$name\t$size\t$md5\t$sha_1" >> "$output/files.$xsv_flg"
+    printf "%s\t%d\t%s\t%s\n" "$name" "$size" "$md5" "$sha_1" >> "$output/files.$xsv_flg"
     fi
     if [ "$xsv_flg" = "csv" ]; then 
     echo "$name,$size,$md5,$sha_1" >> "$output/files.$xsv_flg"
