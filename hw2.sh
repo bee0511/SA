@@ -47,8 +47,8 @@ if [ ! "${output}" ] || [ ! -d "${output}" ]; then
 fi
 
 if [ "$j_flg" ]; then
-    name=$(yq '.name' "${input}")
-    author=$(yq '.author' "${input}")
+    name=$(yq '.name' "${input}" | sed 's/"//g')
+    author=$(yq '.author' "${input}" | sed 's/"//g')
     date=$(yq '.date' "${input}")
     formatted_date=$(awk -v ts="$date" 'BEGIN { print strftime("%Y-%m-%d %H:%M:%S", ts) }')
     # json="{\n\t\"name\": \"$name\",\n\t\"author\": \"$author\",\n\t\"date\": \"$formatted_date\"\n}"
@@ -75,7 +75,7 @@ for i in $(seq 0 $((file_count - 1))); do
     md5=$(yq ".files[$i].hash.md5" "$input" |  sed 's/"//g')
     sha_1=$(yq ".files[$i].hash.\"sha-1\"" "$input" |  sed 's/"//g')
 
-    echo
+    
     echo -------
     echo "Name: $name"
     echo "Type: $type"
