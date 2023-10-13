@@ -59,7 +59,8 @@ if [ "$xsv_flg" ]; then
 fi
 
 file_count=$(yq eval '.files | length' "$input")
-error_files=0
+ERROR_FILES=0
+
 for i in $(seq 0 $((file_count - 1))); do
     name=$(yq eval ".files[$i].name" "$input")
     type=$(yq eval ".files[$i].type" "$input")
@@ -68,34 +69,33 @@ for i in $(seq 0 $((file_count - 1))); do
     sha_1=$(yq eval ".files[$i].hash.sha-1" "$input")
 
     file_dir="$output/$name"
+    test -f "$file_dir" && rm "$file_dir" # Remove file if it already exists
+
     mkdir -p "$(dirname "$file_dir")"
 
     decoded_data=$(echo "$data" | base64 -d)
     echo "$decoded_data" >> "$file_dir"
 
     size=$(echo "$decoded_data" | wc -c | tr -d ' ')
-    
+
     if [ "$XSVSPL" ]; then
       echo "$name${XSVSPL}$size${XSVSPL}$md5${XSVSPL}$sha_1" >> "$output/files.$xsv_flg"
     fi
-    # echo "File $i:"
-    # echo "Name: $name"
-    # echo "Type: $type"
-    # echo "Data: $data"
-    # echo "MD5: $md5"
-    # echo "SHA-1: $sha_1"
-    # echo "Decoded data: $decoded_data"
-    # echo "Size: $size"
-    echo "file_dir: $file_dir"
-    verify_md5=$(md5sum "$file_dir" | cut -f1 -d " ") 
-    verify_sha1=$(sha1sum "$file_dir" | cut -f1 -d " ") 
-    # echo verify_md5: "$verify_md5", md5: "$md5"
-    # echo verify_sha1: "$verify_sha1", sha1: "$sha_1"
-    if [ "$md5" != "$verify_md5" ] || [ "$sha_1" != "$verify_sha1" ]; then
-        # rm "$file_dir"
-        error_files=$((error_files+1))
-        echo "$file_dir"
+
+    verify_md5=$(md5sum "$file_dir" | cut -f1 -d " ")
+    verify_sha1=$(sha1sum "$file_dir" | cut -f1 -d " ")
+    if [ ! "$xsv_flg" ] &&  [ ! "$j_flg" ] && [ "$type" = "hw2" ] ; then
+      # The type is "hw2"; recursively run the script on the file
+      sh ./hw2.sh -i "$file_dir" -o "$output"
+      ERROR_FILES=$((ERROR_FILES+$?))
     fi
+
+    if [ "$md5" != "$verify_md5" ] || [ "$sha_1" != "$verify_sha1" ]; then
+        ERROR_FILES=$((ERROR_FILES+1))
+        echo Invalid md5 or sha-1: "$file_dir"
+    fi
+
 done
 
-exit $error_files
+# echo The total number of error files: "$ERROR_FILES"
+exit $ERROR_FILES
