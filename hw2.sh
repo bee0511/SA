@@ -58,16 +58,16 @@ if [ "$xsv_flg" ]; then
     echo "filename${XSVSPL}size${XSVSPL}md5${XSVSPL}sha1" > "$output/files.$xsv_flg"
 fi
 
-file_count=$(yq '.files | length' "$input" | tr "\"")
+file_count=$(yq '.files | length' "$input" |  sed 's/"//g')
 ERROR_FILES=0
 
 for i in $(seq 0 $((file_count - 1))); do
 
-    name=$(yq ".files[$i].name" "$input" | tr "\"")
-    type=$(yq ".files[$i].type" "$input" | tr "\"")
-    data=$(yq ".files[$i].data" "$input" | tr "\"")
-    md5=$(yq ".files[$i].hash.md5" "$input" | tr "\"")
-    sha_1=$(yq ".files[$i].hash.sha-1" "$input" | tr "\"")
+    name=$(yq ".files[$i].name" "$input" | sed 's/"//g')
+    type=$(yq ".files[$i].type" "$input" |  sed 's/"//g')
+    data=$(yq ".files[$i].data" "$input" |  sed 's/"//g')
+    md5=$(yq ".files[$i].hash.md5" "$input" |  sed 's/"//g')
+    sha_1=$(yq ".files[$i].hash.sha-1" "$input" |  sed 's/"//g')
 
     echo "Name: $name"
     echo "Type: $type"
