@@ -30,6 +30,9 @@ while getopts "i:o:c:j" op 2>/dev/null; do
   esac
 done
 
+echo input: "$input"
+echo output: "$output"
+
 if [ ! "${input}" ] || [ "${input}" != "${input%.hw2}.hw2" ]; then
   >&2 echo "Input file must end with .hw2 ($input)"
   >&2 echo "$help"
@@ -47,16 +50,17 @@ if [ "$j_flg" ]; then
     name=$(yq '.name' "${input}")
     author=$(yq '.author' "${input}")
     date=$(yq '.date' "${input}")
-    formatted_date=$(awk -v ts="$date" 'BEGIN { print strftime("%Y-%m-%d %H:%M:%S", ts) }')
-    json="{\"name\": \"$name\", \"author\": \"$author\", \"date\": \"$formatted_date\"}"
+    # formatted_date=$(awk -v ts="$date" 'BEGIN { print strftime("%Y-%m-%d %H:%M:%S", ts) }')
+    json="{\"name\": \"$name\", \"author\": \"$author\", \"date\": \"$date\"}"
     echo "$json" > "${output}/info.json"
-    echo $formatted_date
 fi
 
-if [ "$xsv_flg" ]; then
-    if [ "$xsv_flg" = "tsv" ]; then XSVSPL='\t'; fi
-    if [ "$xsv_flg" = "csv" ]; then XSVSPL=','; fi
-    echo "filename${XSVSPL}size${XSVSPL}md5${XSVSPL}sha1" > "$output/files.$xsv_flg"
+if [ "$xsv_flg" = "tsv" ]; then 
+  echo -e "filename\tsize\tmd5\tsha1" > "$output/files.$xsv_flg"
+fi
+
+if [ "$xsv_flg" = "csv" ]; then 
+  echo  "filename,size,md5,sha1"> "$output/files.$xsv_flg"
 fi
 
 file_count=$(yq '.files | length' "$input" |  sed 's/"//g')
@@ -87,8 +91,12 @@ for i in $(seq 0 $((file_count - 1))); do
 
     size=$(echo "$decoded_data" | wc -c | tr -d ' ')
 
-    if [ "$XSVSPL" ]; then
-      echo "$name${XSVSPL}$size${XSVSPL}$md5${XSVSPL}$sha_1" >> "$output/files.$xsv_flg"
+
+    if [ "$xsv_flg" = "tsv" ]; then 
+    echo -e "$name\t$size\t$md5\t$sha_1" >> "$output/files.$xsv_flg"
+    fi
+    if [ "$xsv_flg" = "csv" ]; then 
+    echo "$name,$size,$md5,$sha_1" >> "$output/files.$xsv_flg"
     fi
 
     verify_md5=$(md5sum "$file_dir" | cut -f1 -d " ")
