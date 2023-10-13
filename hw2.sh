@@ -50,9 +50,8 @@ if [ "$j_flg" ]; then
     name=$(yq '.name' "${input}" | sed 's/"//g')
     author=$(yq '.author' "${input}" | sed 's/"//g')
     date=$(yq '.date' "$input" | sed 's/"//g')
-    time_zone=$(date -r "$date" "%z")
-    formatted_time_zone=$(echo "$time_zone" | sed 's/\(.\{3\}\)$/:\1/')
-    formatted_date=$(date -r "$date" "+%Y-%m-%dT%H:%M:%S")$formatted_time_zone
+    formatted_date=$(date -r "$date" "+%Y-%m-%dT%H:%M:%S%z")
+    formatted_date=$(echo "$formatted_date" | sed 's/://g; s/z/+08:00/')
     # json="{\n\t\"name\": \"$name\",\n\t\"author\": \"$author\",\n\t\"date\": \"$formatted_date\"\n}"
     printf "{\n\t\"name\": \"%s\",\n\t\"author\": \"%s\",\n\t\"date\": \"%s\"\n}" "$name" "$author" "$formatted_date" > "${output}/info.json"
     cat "${output}"/info.json
