@@ -50,9 +50,9 @@ if [ "$j_flg" ]; then
     name=$(yq '.name' "${input}")
     author=$(yq '.author' "${input}")
     date=$(yq '.date' "${input}")
-    # formatted_date=$(awk -v ts="$date" 'BEGIN { print strftime("%Y-%m-%d %H:%M:%S", ts) }')
-    json="{\"name\": \"$name\", \"author\": \"$author\", \"date\": \"$date\"}"
-    echo "$json" > "${output}/info.json"
+    formatted_date=$(awk -v ts="$date" 'BEGIN { print strftime("%Y-%m-%d %H:%M:%S", ts) }')
+    json="{\n\t\"name\": \"$name\",\n\t\"author\": \"$author\",\n\t\"date\": \"$formatted_date\"\n}"
+    printf "$json" > "${output}/info.json"
     echo json: "$json"
 fi
 
