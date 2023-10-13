@@ -51,9 +51,9 @@ if [ "$j_flg" ]; then
     author=$(yq '.author' "${input}")
     date=$(yq '.date' "${input}")
     formatted_date=$(awk -v ts="$date" 'BEGIN { print strftime("%Y-%m-%d %H:%M:%S", ts) }')
-    json="{\n\t\"name\": \"$name\",\n\t\"author\": \"$author\",\n\t\"date\": \"$formatted_date\"\n}"
-    printf %s "$json" > "${output}/info.json"
-    echo json: "$json"
+    # json="{\n\t\"name\": \"$name\",\n\t\"author\": \"$author\",\n\t\"date\": \"$formatted_date\"\n}"
+    printf "{\n\t\"name\": \"%s\",\n\t\"author\": \"%s\",\n\t\"date\": \"%s\"\n}" "$name" "$author" "$formatted_date" > "${output}/info.json"
+    cat "${output}"/info.json
 fi
 
 if [ "$xsv_flg" = "tsv" ]; then 
@@ -75,6 +75,7 @@ for i in $(seq 0 $((file_count - 1))); do
     md5=$(yq ".files[$i].hash.md5" "$input" |  sed 's/"//g')
     sha_1=$(yq ".files[$i].hash.\"sha-1\"" "$input" |  sed 's/"//g')
 
+    echo
     echo -------
     echo "Name: $name"
     echo "Type: $type"
