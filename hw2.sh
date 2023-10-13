@@ -10,7 +10,7 @@ Available Options:
 -c csv|tsv: Output files.[ct]sv
 -j: Output info.json"
 
-while getopts "i:o:c:j" op; do
+while getopts "i:o:c:j" op 2>/dev/null; do
   case $op in
     i)
       input=$OPTARG
@@ -59,14 +59,23 @@ if [ "$xsv_flg" ]; then
 fi
 
 file_count=$(yq eval '.files | length' "$input")
+echo count: $file_count
+echo input: $input
 ERROR_FILES=0
 
 for i in $(seq 0 $((file_count - 1))); do
+
     name=$(yq eval ".files[$i].name" "$input")
     type=$(yq eval ".files[$i].type" "$input")
     data=$(yq eval ".files[$i].data" "$input")
     md5=$(yq eval ".files[$i].hash.md5" "$input")
     sha_1=$(yq eval ".files[$i].hash.sha-1" "$input")
+
+    echo "Name: $name"
+    echo "Type: $type"
+    echo "Data: $data"
+    echo "MD5: $md5"
+    echo "SHA-1: $sha_1"
 
     file_dir="$output/$name"
     test -f "$file_dir" && rm "$file_dir" # Remove file if it already exists
