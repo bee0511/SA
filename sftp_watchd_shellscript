@@ -1,0 +1,30 @@
+#!/usr/local/bin/bash
+# /usr/local/sbin/sftp_watchd
+
+# Initialize an empty array
+list=()
+
+# Use process substitution to split the output of the command
+while IFS= read -r line; do
+    list+=("$line")
+done < <(ls -l /home/sftp/public | awk '{print $3 " " $9}')
+
+# Iterate through the list
+for pair in "${list[@]}"
+do
+    # Split the pair into username and file
+    username=$(echo "$pair" | awk '{print $1}')
+    file=$(echo "$pair" | awk '{print $2}')
+
+    # You can perform actions for each username and file here
+    echo "Processing user: $username, File: $file"
+    # Add your logic for each username and file here
+    if [[ "$file" == *.exe ]]; then
+	    file_dir=("/home/sftp/public/$file")
+	    echo "${file_dir} violate file detected. Uploaded by ${username}." | logger -p local1.warning
+	    echo "${file_dir} violate file detected. Uploaded by ${username}." 
+	    mv "${file_dir}" /home/sftp/hidden/.exe
+	    chmod 777 /home/sftp/hidden/.exe/$file
+    fi
+done
+
