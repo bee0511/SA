@@ -26,17 +26,35 @@ function zfs_destroy() {
 }
 
 function zfs_list() {
-  zfs list -H -o name -r -t snapshot "$1" | sort -t '@' -k 2 | grep 'zfsbak_' | awk '{print NR "\t" $0}' | grep "^$2"
+  zfs list -H -o name -r -t snapshot "$1" | grep "$1@zfsbak_" | awk '{print NR "\t" $0}' | grep "^$2"
 }
 
 function zfsbak_create() {
-  dataset="$1"
-  rotation="${2-12}"
-  zfs_snap "$dataset@zfsbak_$(datetime)"
+  # dataset="$1"
+  local list=()
+  while IFS= read -r line; do
+	  list+=("$line")
+  done < <(zfs list | grep -v ^NAME | grep "$1" | awk '{print $1}')
 
-  for snap in $(zfs_list "$dataset" | awk '{ print $2 }' | tail -r | tail -n "+$((rotation+1))" | tail -r); do
-    zfs_destroy "$snap"
+  rotation="${2-12}"
+  for dataset in "${list[@]}"
+  do
+	  if [ "$(echo "$dataset" | tr "@" " " | awk '{print $1}')" = "$1" ];then
+		  echo "Snap $1@zfsbak_$(datetime)"
+	  fi
+	  zfs snapshot "$dataset@zfsbak_$(datetime)"
+	  #zfs_list "$dataset"
+	  for snap in $(zfs_list "$dataset" | grep "${dataset}@" | awk '{ print $2 }' | tail -r | tail -n "+$((rotation+1))" | tail -r);do
+		  if [ "$(echo "$dataset" | tr "@" " " | awk '{print $1}')" = "$1" ]; then
+			  echo "Destroy $snap"
+		  fi
+		  zfs destroy "$snap"
+	  done
   done
+
+  #for snap in $(zfs_list "$dataset" | awk '{ print $2 }' | tail -r | tail -n "+$((rotation+1))" | tail -r); do
+    #zfs_destroy "$snap"
+  #done
 }
 
 function parse_dataset_id() {
