@@ -70,19 +70,20 @@ function zfsbak_export() {
       id="${2-1}"
       snapname="$(zfs_list "$dataset" "$id" | awk '{ print $2 }')"
     timestamp="`echo ${snapname} | cut -d '@' -f 2`"
-    echo "dataset: $dataset, timestamp: $timestamp" 
+    # echo "dataset: $dataset, timestamp: $timestamp, snapname: $snapname" 
       EXPORT_PASS=${ZFSBAK_PASS:-''}
       pathname="$HOME/${dataset/\//_}@${timestamp}.zst.aes"
     # rm -fr "$pathname"
-     zfs send ${snapname} | zstd -qc - | openssl enc -aes-256-cbc -pbkdf2 -pass "pass:$EXPORT_PASS" -e -out "$pathname"
+     zfs send ${snapname} | zstd -qc - | openssl enc -aes-256-cbc -pbkdf2 -pass "pass:$EXPORT_PASS" -e > "$pathname"
       echo "Export $snapname to $pathname"
 }
 
 function zfsbak_import() {
   filename="${1?'filename'}"
   dataset="${2?'dataset'}"
-  IMPORT_PASS=${ZFSBAK_PASS:-''} 
-  openssl enc -aes-256-cbc -pbkdf2 -pass "pass:$IMPORT_PASS" -d -in "$filename" | zstd -d | zfs receive "$dataset" 
+
+ # echo "filename: $filename, dataset: $dataset" 
+   zstd -dcq "$filename" | zfs receive "$dataset" 
   echo "Import $filename to $dataset"
 }
 
