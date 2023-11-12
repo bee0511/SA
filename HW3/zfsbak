@@ -102,19 +102,21 @@ function zfsbak_list() {
     for pair in "${list[@]}";do
       name=$(echo "$pair" | awk '{print $1}')
       time=$(echo "$pair" | awk '{print $2}' | sed 's/zfsbak_//')
-      echo $name
-      echo $time
-      if [ "$time" != "$time_tmp" ] && [[ "$dataset" == "$name"* ]]; then
+      #echo NAME: $name
+      #echo TIME: $time
+      #echo DATASET: $dataset
+      if [ "$time" != "$time_tmp" ] && [[ "$name" == "$dataset"* ]]; then
         time_tmp="$time"
-        echo "new time: $time_tmp"
+        #echo "new time: $time_tmp"
         if [ "${#id[@]}" -eq 0 ]; then
           echo -e "$index\t$name\t\t$time"
-  	elif [[ "${id[$id_index]}" -eq "$index" ]];then
+  	elif [[ "${id[$id_index]}" == "$index" ]];then
 	  echo -e "$index\t$name\t\t$time"
 	  id_index=$(($id_index+1))
         fi
 	index=$(($index+1))
       fi
+
       #echo "new index: $index"
     done
  # fi
