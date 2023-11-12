@@ -138,8 +138,20 @@ function zfsbak_list() {
  fi
 }
 
+function delete_parse() {
+  dataset="${1-mypool}"
+  id=""
+  if [[ "$dataset" != mypool* ]]; then
+    id="$dataset"
+    dataset="mypool"
+  fi
+  if [ $# = 2 ]; then
+    id="$2"
+  fi
+}
+
 function zfsbak_delete() {
-  parse_dataset_id "$@"
+  delete_parse "$@"
   #echo "$dataset $id"
   for snap in $(zfs_list "$dataset" "$id" | awk '{ print $2 }'); do
 	  #echo "$snap"
