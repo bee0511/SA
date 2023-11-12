@@ -126,7 +126,7 @@ function zfsbak_list() {
 
 	  for pair in "${all_list[@]}";do
 		  name=$(echo "$pair" | awk '{print $1}')
-		  time=$(echo "$pair" | awk '{print $2}')
+		  time=$(echo "$pair" | awk '{print $2}' | sed 's/zfsbak_//')
 		  if [[ "${#id[@]}" -eq 0 ]]; then
 			  echo -e "$index\t$name\t\t$time"
 		  elif [[ "${id[$id_index]}" -eq "$index" ]]; then
@@ -140,12 +140,15 @@ function zfsbak_list() {
 
 function zfsbak_delete() {
   parse_dataset_id "$@"
+  #echo "$dataset $id"
   for snap in $(zfs_list "$dataset" "$id" | awk '{ print $2 }'); do
-	  # echo "DATASET: $dataset"
+	  #echo "$snap"
+	  #echo "${id[$id_index]}"
 	  if [ $(echo "$snap" | tr '@' ' ' | awk '{print $1}') = "$dataset" ];then
 		echo "Destroy $snap"
 	  fi
 	  zfs destroy "$snap"
+	  #id_index=$((id_index+1))
   done
 }
 
