@@ -77,9 +77,18 @@ function zfsbak_list() {
 }
 
 function zfsbak_delete() {
-  parse_dataset_id "$@"
-  for snap in $(zfs_list "$dataset" "$id" | awk '{ print $2 }'); do
-    zfs_destroy "$snap"
+  local list=()
+  while IFS= read -r line; do
+	  list+=("$line")
+  done < <(zfs list | grep -v ^NAME | grep "$1" | awk '{print $1}')
+
+  for dataset in "${list[@]}"
+  do
+	  if [ "$(echo "$dataset" | tr "@" " " | awk '{print $1}')" = "$1" ];then
+		  echo "Delete $1@zfsbak_$(datetime)"
+	  fi
+	  zfs destroy "$dataset@zfsbak_$(datetime)"
+	  zfs_list "$dataset"
   done
 }
 
