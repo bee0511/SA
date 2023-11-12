@@ -87,59 +87,57 @@ function zfsbak_list() {
   parse_dataset_id "$@"
   echo -e "ID\tDATASET\t\tTIME"
   echo "dataset: $dataset, id: $id"
-  if [ "$dataset" != "mypool" ]; then
-  local list=()
-  while IFS= read -r line; do
-	  list+=("$line")
-  done < <(zfs list -H -o name -r -t snapshot "$dataset" | grep "zfsbak_" | sort -t@ -k 2,2 -k 1,1 | awk -F@ '{print $1 " " $2}')
-   # echo $(zfs list -H -o name -r -t snapshot "$dataset" | grep "zfsbak_" | sort -t@ -k 2,2 -k 1,1 | awk -F@ '{print $1 " " $2}')
-  time_tmp=$(echo "")
   index=1
   id=($id)
   id=($(printf "%s\n" "${id[@]}" | sort))
   id_index=0
-  for pair in "${list[@]}";do
-	  name=$(echo "$pair" | awk '{print $1}')
-	  time=$(echo "$pair" | awk '{print $2}' | sed 's/zfsbak_//')
-	  #echo $name
-	  #echo $time
-	  if [ "$time" != "$time_tmp" ] && [[ "$dataset" == "$name"* ]]; then
-		  time_tmp="$time"
-		  #echo "new time: $time_tmp"
-		  if [ "${#id[@]}" -eq 0 ]; then
-		 	 echo -e "$index\t$name\t\t$time"
-		 else
-			 if [[ "${id[$id_index]}" -eq "$index" ]]; then
-				 echo -e "$index\t$name\t\t$time"
-				 id_index=$(($id_index+1))
-			 fi
+  if [ "$dataset" != "mypool" ]; then
+    local list=()
+    while IFS= read -r line; do
+      list+=("$line")
+    done < <(zfs list -H -o name -r -t snapshot "$dataset" | grep "zfsbak_" | sort -t@ -k 2,2 -k 1,1 | awk -F@ '{print $1 " " $2}')
+    # echo $(zfs list -H -o name -r -t snapshot "$dataset" | grep "zfsbak_" | sort -t@ -k 2,2 -k 1,1 | awk -F@ '{print $1 " " $2}')
+    time_tmp=$(echo "")
+    
+    for pair in "${list[@]}";do
+      name=$(echo "$pair" | awk '{print $1}')
+      time=$(echo "$pair" | awk '{print $2}' | sed 's/zfsbak_//')
+      #echo $name
+      #echo $time
+      if [ "$time" != "$time_tmp" ] && [[ "$dataset" == "$name"* ]]; then
+        time_tmp="$time"
+        #echo "new time: $time_tmp"
+        if [ "${#id[@]}" -eq 0 ]; then
+        echo -e "$index\t$name\t\t$time"
+        fi
+      else
+        if [[ "${id[$id_index]}" -eq "$index" ]]; then
+          echo -e "$index\t$name\t\t$time"
+          id_index=$(($id_index+1))
+        fi
+      fi
+      index=$(("$index"+1))
+      #echo "new index: $index"
+    done
+  fi
+  if [ "$dataset" = "mypool" ];then
+	  local all_list=()
+	  while IFS= read -r line; do
+		  all_list+=("$line")
+	  done < <(zfs list -H -o name -r -t snapshot "$dataset" | grep "zfsbak_" | awk -F@ '{print $1 " " $2}')
+
+	  for pair in "${all_list[@]}";do
+		  name=$(echo "$pair" | awk '{print $1}')
+		  time=$(echo "$pair" | awk '{print $2}')
+		  if [[ "${#id[@]}" -eq 0 ]]; then
+			  echo -e "$index\t$name\t\t$time"
+		  else
+			  if [[ "${id[$id_index]}" -eq "$index" ]]; then
+				  echo -e "$index\t$name\t\t$time"
+				  id_index=$(("id_index"+1))
+			  fi
 		  fi
 		  index=$(("$index"+1))
-		  #echo "new index: $index"
-	  fi
-  done
-  fi
- if [ "$dataset" = "mypool" ];then
-	 local all_list=()
-	 while IFS= read -r line; do
-		 all_list+=("$line")
-	 done < <(zfs list -H -o name -r -t snapshot "$dataset" | grep "zfsbak_" | awk -F@ '{print $1 " " $2}')
-	 index=1
-	 id=($id)
-	 id=($(printf "%s\n" "${id[@]}" | sort))
-	 id_index=0
-	 for pair in "${list[@]}";do
-		 name=$(echo "$pair" | awk '{print $1}')
-		 time=$(echo "$pair" | awk '{print $2}')
-		 if [[ "${#id[@]}" -eq 0 ]]; then
-			 echo -e "$index\t$name\t\t$time"
-		 else
-			 if [[ "${id[$id_index]}" -eq "$index" ]]; then
-				 echo -e "$index\t$name\t\t$time"
-				 id_index=$(("id_index"+1))
-			 fi
-		 fi
-		 index=$(("$index"+1))
 	 done
  fi
 }
