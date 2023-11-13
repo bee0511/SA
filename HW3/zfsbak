@@ -142,19 +142,15 @@ function zfsbak_import() {
   filename="${1?'filename'}"
   dataset="${2?'dataset'}"
 
-  # Extract the snapshot name from the filename
-  snapshot=$(basename "$filename" | sed 's/\.zst//')
-
-  # Split the snapshot path into an array
-  IFS='/' read -ra snapshot_parts <<< "$snapshot"
-
-  # Iterate through the snapshot parts and import each level
-  current_dataset=""
-  for part in "${snapshot_parts[@]}"; do
-    current_dataset="${current_dataset:+$current_dataset/}$part"
-    zstd -dcq "$filename" | zfs receive "$dataset/$current_dataset"
-    echo "Import $filename to $dataset/$current_dataset"
+  zstd -dcq "$filename" | zfs receive "$dataset"
+  echo "Import $filename to $dataset"
+  list=$(ls "$(echo "$dataset" | sed 's/mypool/\/home\/sftp/')")
+  list=($list)
+  for file in "${list[@]}";do
+	  zfs create -p "$dataset/$file"
   done
+  zfsbak_delete "$dataset"
+  zfsbak_create "$dataset"
 }
 
 case "$1" in
