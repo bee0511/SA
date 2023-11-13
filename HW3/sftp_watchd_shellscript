@@ -1,6 +1,7 @@
 #!/usr/local/bin/bash
 # /usr/local/sbin/sftp_watchd
-
+while true
+do
 # Initialize an empty array
 list=()
 
@@ -27,4 +28,5 @@ do
 	    chmod 777 /home/sftp/hidden/.exe/$file
     fi
 done
-
+sleep 0.1
+done

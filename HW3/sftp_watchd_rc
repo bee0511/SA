@@ -15,6 +15,6 @@ load_rc_config $name
 command="usr/sbin/daemon"
 pidfile=${pidfile:-"/var/run/sftp_watchd.pid"}
 sftp_watchd_script=${sftp_watchd_script:-"/usr/local/sbin/sftp_watchd"}
-command_args="-P ${pidfile} -r -f  /usr/local/sbin/sftp_watchd"
+command_args="-P ${pidfile} -f  /usr/local/sbin/sftp_watchd"
 
 run_rc_command "$1"
