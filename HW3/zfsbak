@@ -46,17 +46,19 @@ function zfsbak_create() {
   rotation="${2-12}"
   for dataset in "${list[@]}"
   do
+	  # echo "$dataset"
 	  if [ "$(echo "$dataset" | tr "@" " " | awk '{print $1}')" = "$1" ];then
 		  echo "Snap $1@zfsbak_$(datetime)"
 	  fi
+	  if [[ "$dataset" == "$1"/* || "$dataset" == "$1" ]]; then
 	  zfs snapshot "$dataset@zfsbak_$(datetime)"
-	  #zfs_list "$dataset"
 	  for snap in $(zfs_list "$dataset" | grep "${dataset}@" | awk '{ print $2 }' | tail -r | tail -n "+$((rotation+1))" | tail -r);do
 		  if [ "$(echo "$dataset" | tr "@" " " | awk '{print $1}')" = "$1" ]; then
 			  echo "Destroy $snap"
 		  fi
 		  zfs destroy "$snap"
 	  done
+	  fi
   done
 
   #for snap in $(zfs_list "$dataset" | awk '{ print $2 }' | tail -r | tail -n "+$((rotation+1))" | tail -r); do
@@ -86,28 +88,34 @@ elif [ $# -ge 2 ] && [ "$dataset" != "mypool" ] ; then
 function zfsbak_list() {
   parse_dataset_id "$@"
   echo -e "ID\tDATASET\t\tTIME"
-  echo "dataset: $dataset, id: $id"
+  #echo "dataset: $dataset, id: $id"
   index=1
   id=($id)
   id=($(printf "%s\n" "${id[@]}" | sort -n))
   id_index=0
- # if [ "$dataset" != "mypool" ]; then
     local list=()
     while IFS= read -r line; do
       list+=("$line")
     done < <(zfs list -H -o name -r -t snapshot "$dataset" | grep "zfsbak_" | sort -t@ -k 2,2 -k 1,1 | awk -F@ '{print $1 " " $2}')
-    # echo $(zfs list -H -o name -r -t snapshot "$dataset" | grep "zfsbak_" | sort -t@ -k 2,2 -k 1,1 | awk -F@ '{print $1 " " $2}')
+    #echo $(zfs list -H -o name -r -t snapshot "$dataset" | grep "zfsbak_" | sort -t@ -k 2,2 -k 1,1 | awk -F@ '{print $1 " " $2}')
     time_tmp=$(echo "")
-    
+    name_tmp=$(echo "")
     for pair in "${list[@]}";do
       name=$(echo "$pair" | awk '{print $1}')
       time=$(echo "$pair" | awk '{print $2}' | sed 's/zfsbak_//')
-      #echo NAME: $name
-      #echo TIME: $time
-      #echo DATASET: $dataset
-      if [ "$time" != "$time_tmp" ] && [[ "$name" == "$dataset"* ]]; then
+      if [ "$dataset" == "mypool" ]; then
+	      dataset="$name"
+      fi
+      if [[ "$name" != "$dataset" && "$name" != "$dataset"/* ]]; then
+	      dataset="$name"
+	      time_tmp=""
+      fi
+      #echo dataset: "$dataset" name: "$name" time: "$time" time_tmp: "$time_tmp"
+      if [ "$time" != "$time_tmp" ] && [[ "$name" == "$dataset" || "$name" == "$dataset"/* ]]; then
         time_tmp="$time"
         #echo "new time: $time_tmp"
+	#name_tmp="$name"
+	#echo "name_tmp: $name_tmp"
         if [ "${#id[@]}" -eq 0 ]; then
           echo -e "$index\t$name\t\t$time"
   	elif [[ "${id[$id_index]}" == "$index" ]];then
@@ -119,50 +127,18 @@ function zfsbak_list() {
 
       #echo "new index: $index"
     done
- # fi
-#  if [ "$dataset" = "mypool" ];then
-#	  local all_list=()
-#	  while IFS= read -r line; do
-#		  all_list+=("$line")
-#	  done < <(zfs list -H -o name -r -t snapshot "$dataset" | grep "zfsbak_" | awk -F@ '{print $1 " " $2}')
-#
-#	  for pair in "${all_list[@]}";do
-#		  name=$(echo "$pair" | awk '{print $1}')
-#		  time=$(echo "$pair" | awk '{print $2}' | sed 's/zfsbak_//')
-#		  if [[ "${#id[@]}" -eq 0 ]]; then
-#			  echo -e "$index\t$name\t\t$time"
-#		  elif [[ "${id[$id_index]}" -eq "$index" ]]; then
-#			  echo -e "$index\t$name\t\t$time"
-#			  id_index=$(("id_index"+1))
-#		  fi
-#		  index=$(("$index"+1))
-#	 done
-# fi
-}
-
-function delete_parse() {
-  dataset="${1-mypool}"
-  id=""
-  if [[ "$dataset" != mypool* ]]; then
-    id="$dataset"
-    dataset="mypool"
-  fi
-  if [ $# = 2 ]; then
-    id="$2"
-  fi
 }
 
 function zfsbak_delete() {
-  delete_parse "$@"
+  parse_dataset_id "$@"
   #echo "$dataset $id"
-  for snap in $(zfs_list "$dataset" "$id" | awk '{ print $2 }'); do
-	  #echo "$snap"
-	  #echo "${id[$id_index]}"
-	  if [ $(echo "$snap" | tr '@' ' ' | awk '{print $1}') = "$dataset" ];then
-		echo "Destroy $snap"
-	  fi
-	  zfs destroy "$snap"
+  for snap in $(zfsbak_list "$dataset" "$id" | awk '{ print $2 "@zfsbak_" $3 }'); do
+	  #echo "$snap"	
+	  if ! [ $(echo "$snap" | grep "DATASET") ];then
+	  echo "Destroy $snap"
+	  zfs destroy -r "$snap"
 	  #id_index=$((id_index+1))
+	  fi
   done
 }
 
