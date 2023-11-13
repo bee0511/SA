@@ -20,14 +20,7 @@ function zfs_snap() {
   zfs snapshot "$1"
 }
 
-function zfs_destroy() {
-  echo "Destroy $1"
-  zfs destroy "$1"
-}
-
 function zfs_list() {
-  # echo "zfs_list $1 $2"
-  # echo "dataset: ${1}, ID: ${2}"
   if [ "$1" = "mypool" ] && [ "$2" = "" ];then
 	  # echo "no args"
 	  zfs list -H -o name -r -t snapshot | grep "@zfsbak_" | awk '{print NR "\t" $0}'
@@ -37,7 +30,6 @@ function zfs_list() {
 }
 
 function zfsbak_create() {
-  # dataset="$1"
   local list=()
   while IFS= read -r line; do
 	  list+=("$line")
@@ -60,10 +52,6 @@ function zfsbak_create() {
 	  done
 	  fi
   done
-
-  #for snap in $(zfs_list "$dataset" | awk '{ print $2 }' | tail -r | tail -n "+$((rotation+1))" | tail -r); do
-    #zfs_destroy "$snap"
-  #done
 }
 
 function parse_dataset_id() {
@@ -114,18 +102,14 @@ function zfsbak_list() {
       if [ "$time" != "$time_tmp" ] && [[ "$name" == "$dataset" || "$name" == "$dataset"/* ]]; then
         time_tmp="$time"
         #echo "new time: $time_tmp"
-	#name_tmp="$name"
-	#echo "name_tmp: $name_tmp"
         if [ "${#id[@]}" -eq 0 ]; then
           echo -e "$index\t$name\t\t$time"
-  	elif [[ "${id[$id_index]}" == "$index" ]];then
-	  echo -e "$index\t$name\t\t$time"
-	  id_index=$(($id_index+1))
+  	    elif [[ "${id[$id_index]}" == "$index" ]];then
+	        echo -e "$index\t$name\t\t$time"
+	        id_index=$(($id_index+1))
         fi
-	index=$(($index+1))
+	      index=$(($index+1))
       fi
-
-      #echo "new index: $index"
     done
 }
 
@@ -137,7 +121,6 @@ function zfsbak_delete() {
 	  if ! [ $(echo "$snap" | grep "DATASET") ];then
 	  echo "Destroy $snap"
 	  zfs destroy -r "$snap"
-	  #id_index=$((id_index+1))
 	  fi
   done
 }
@@ -159,9 +142,19 @@ function zfsbak_import() {
   filename="${1?'filename'}"
   dataset="${2?'dataset'}"
 
- # echo "filename: $filename, dataset: $dataset" 
-   zstd -dcq "$filename" | zfs receive "$dataset" 
-  echo "Import $filename to $dataset"
+  # Extract the snapshot name from the filename
+  snapshot=$(basename "$filename" | sed 's/\.zst//')
+
+  # Split the snapshot path into an array
+  IFS='/' read -ra snapshot_parts <<< "$snapshot"
+
+  # Iterate through the snapshot parts and import each level
+  current_dataset=""
+  for part in "${snapshot_parts[@]}"; do
+    current_dataset="${current_dataset:+$current_dataset/}$part"
+    zstd -dcq "$filename" | zfs receive "$dataset/$current_dataset"
+    echo "Import $filename to $dataset/$current_dataset"
+  done
 }
 
 case "$1" in
